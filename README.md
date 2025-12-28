@@ -1,1 +1,1 @@
-"# plugin_facturascripts_classlog" 
+"# La carpeta plugin de facturascripts para el proyecto - ClassLog"
