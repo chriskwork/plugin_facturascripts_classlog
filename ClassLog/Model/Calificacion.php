@@ -13,7 +13,7 @@ class Calificacion extends ModelClass
     public $usuario_id;
     public $curso_id;
     public $tipo;
-    public $nobre;
+    public $nombre;
     public $nota;
     public $nota_maxima;
     public $fecha;
