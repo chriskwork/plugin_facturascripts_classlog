@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<table>
+    <column>
+        <name>id</name>
+        <type>serial</type>
+        <null>NO</null>
+    </column>
+    <column>
+        <name>usuario_id</name>
+        <type>integer</type>
+        <null>NO</null>
+    </column>
+    <column>
+        <name>curso_id</name>
+        <type>integer</type>
+        <null>NO</null>
+    </column>
+    <column>
+        <name>fecha_matricula</name>
+        <type>date</type>
+        <default>CURRENT_DATE</default>
+        <null>YES</null>
+    </column>
+    <column>
+        <name>activo</name>
+        <type>boolean</type>
+        <default>TRUE</default>
+        <null>YES</null>
+    </column>
+    <constraint>
+        <name>cl_matriculas_pkey</name>
+        <type>PRIMARY KEY (id)</type>
+    </constraint>
+    <constraint>
+        <name>cl_matriculas_usuario_fkey</name>
+        <type>FOREIGN KEY (usuario_id) REFERENCES cl_usuarios (id)</type>
+    </constraint>
+    <constraint>
+        <name>cl_matriculas_curso_fkey</name>
+        <type>FOREIGN KEY (curso_id) REFERENCES cl_cursos (id)</type>
+    </constraint>
+    <constraint>
+        <name>cl_matriculas_unique</name>
+        <type>UNIQUE (usuario_id, curso_id)</type>
+    </constraint>
+</table>

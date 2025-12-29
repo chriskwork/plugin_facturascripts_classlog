@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<table>
+    <column>
+        <name>id</name>
+        <type>serial</type>
+        <null>NO</null>
+    </column>
+    <column>
+        <name>usuario_id</name>
+        <type>integer</type>
+        <null>NO</null>
+    </column>
+    <column>
+        <name>horario_id</name>
+        <type>integer</type>
+        <null>NO</null>
+    </column>
+    <column>
+        <name>fecha</name>
+        <type>date</type>
+        <null>NO</null>
+    </column>
+    <column>
+        <name>estado</name>
+        <type>character varying(20)</type>
+        <default>'pendiente'</default>
+        <null>YES</null>
+    </column>
+    <column>
+        <name>created_at</name>
+        <type>timestamp</type>
+        <default>CURRENT_TIMESTAMP</default>
+        <null>YES</null>
+    </column>
+    <constraint>
+        <name>cl_asistencias_pkey</name>
+        <type>PRIMARY KEY (id)</type>
+    </constraint>
+    <constraint>
+        <name>cl_asistencias_usuario_fkey</name>
+        <type>FOREIGN KEY (usuario_id) REFERENCES cl_usuarios (id)</type>
+    </constraint>
+    <constraint>
+        <name>cl_asistencias_horario_fkey</name>
+        <type>FOREIGN KEY (horario_id) REFERENCES cl_horarios (id)</type>
+    </constraint>
+    <constraint>
+        <name>cl_asistencias_unique</name>
+        <type>UNIQUE (usuario_id, horario_id, fecha)</type>
+    </constraint>
+</table>
