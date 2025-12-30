@@ -36,7 +36,7 @@ class ApiStudent extends ApiController
     $today = date('Y-m-d');
     $dayOfWeek = $this->getDayOfWeekLetter(date('N'));
     
-    // 1. 학생의 수강 과목 찾기
+    // 📜📜 Matricula
     $matriculaModel = new Matricula();
     $matriculas = $matriculaModel->all();
     
@@ -47,7 +47,7 @@ class ApiStudent extends ApiController
         }
     }
     
-    // 2. 오늘 수업 일정
+    // 📜📜 Clases de hoy
     $todaySchedule = [];
     $horarioModel = new Horario();
     $horarios = $horarioModel->all();
@@ -75,14 +75,14 @@ class ApiStudent extends ApiController
         }
     }
     
-    // 3. 오늘 출석
+    // 📜📜 Asistencia
     $todayAttendance = [];
     $asistenciaModel = new Asistencia();
     $asistencias = $asistenciaModel->all();
     
     foreach($asistencias as $asist) {
         if($asist->usuario_id == $studentId && $asist->fecha == $today) {
-            // 어느 과목인지 찾기
+            
             $horarioId = $asist->horario_id;
             $cursoNombre = '';
             
@@ -104,8 +104,10 @@ class ApiStudent extends ApiController
             ];
         }
     }
+
+
     
-    // 4. 다가오는 이벤트
+    // 📜📜 Proximas ..limite
     $upcomingEvents = [];
     $eventoModel = new Evento();
     $eventos = $eventoModel->all();
@@ -123,6 +125,11 @@ class ApiStudent extends ApiController
         }
     }
     
+
+
+    // 📜📜 Porcentaje de asistencia
+    $attendanceStats = $this->getAttendanceStats($studentId);
+
     echo json_encode([
         'success' => true,
         'data' => [
@@ -131,7 +138,8 @@ class ApiStudent extends ApiController
             'day_of_week' => $dayOfWeek,
             'today_schedule' => $todaySchedule,
             'today_attendance' => $todayAttendance,
-            'upcoming_events' => $upcomingEvents
+            'upcoming_events' => $upcomingEvents,
+            'attendance_stats' => $attendanceStats 
         ]
     ]);
 }
@@ -148,5 +156,46 @@ class ApiStudent extends ApiController
     {
         $days = ['L', 'M', 'X', 'J', 'V'];
         return $days[$dayNumber - 1] ?? 'L';
+    }
+
+    private function getAttendanceStats($studentId)
+    {
+        $asistenciaModel = new Asistencia();
+        $asistencias = $asistenciaModel->all();
+        
+        $totalClasses = 0;
+        $presentCount = 0;
+        $tardeCount = 0; 
+        $ausenteCount = 0; 
+        
+        foreach($asistencias as $asist) {
+            if($asist->usuario_id == $studentId) {
+                $totalClasses++;
+                
+                switch($asist->estado) {
+                    case 'presente':
+                        $presentCount++;
+                        break;
+                    case 'tarde':
+                        $tardeCount++;
+                        break;
+                    case 'ausente':
+                        $ausenteCount++;
+                        break;
+                }
+            }
+        }
+        
+        $percentage = $totalClasses > 0 
+            ? round(($presentCount / $totalClasses) * 100) 
+            : 0;
+        
+        return [
+            'percentage' => $percentage,
+            'present' => $presentCount,
+            'late' => $tardeCount,
+            'absent' => $ausenteCount,
+            'total' => $totalClasses
+        ];
     }
 }
