@@ -2,6 +2,7 @@
 namespace FacturaScripts\Plugins\ClassLog\Controller;
 
 use FacturaScripts\Core\Template\ApiController;
+use FacturaScripts\Core\Base\DataBase;
 use FacturaScripts\Plugins\ClassLog\Model\Usuario;
 use FacturaScripts\Plugins\ClassLog\Model\Curso;
 use FacturaScripts\Plugins\ClassLog\Model\Matricula;
@@ -10,8 +11,12 @@ use FacturaScripts\Plugins\ClassLog\Model\Horario;
 use FacturaScripts\Plugins\ClassLog\Model\Evento;
 use FacturaScripts\Plugins\ClassLog\Model\Calificacion;
 
+use function PHPSTORM_META\type;
+
 class ApiStudent extends ApiController
 {
+    
+
     protected function runResource(): void
     {
         $action = $this->request->query->get('action', '');
@@ -33,103 +38,63 @@ class ApiStudent extends ApiController
     
     private function getDashboard($studentId)
 {
+    $db = new DataBase();
     $today = date('Y-m-d');
     $dayOfWeek = $this->getDayOfWeekLetter(date('N'));
-    
-    // 📜📜 Matricula
-    $matriculaModel = new Matricula();
-    $matriculas = $matriculaModel->all();
-    
-    $courseIds = [];
-    foreach($matriculas as $mat) {
-        if($mat->usuario_id == $studentId && $mat->activo) {
-            $courseIds[] = $mat->curso_id;
-        }
-    }
-    
-    // 📜📜 Clases de hoy
-    $todaySchedule = [];
-    $horarioModel = new Horario();
-    $horarios = $horarioModel->all();
-    
-    $cursoModel = new Curso();
-    $cursos = $cursoModel->all();
-    
-    foreach($horarios as $horario) {
-        if(in_array($horario->curso_id, $courseIds) && $horario->dia_semana == $dayOfWeek) {
-            // 과목명 찾기
-            $cursoNombre = '';
-            foreach($cursos as $curso) {
-                if($curso->id == $horario->curso_id) {
-                    $cursoNombre = $curso->nombre;
-                    break;
-                }
-            }
-            
-            $todaySchedule[] = [
-                'curso_nombre' => $cursoNombre,
-                'hora_inicio' => $horario->hora_inicio,
-                'hora_fin' => $horario->hora_fin,
-                'aula' => $horario->aula
-            ];
-        }
-    }
-    
-    // 📜📜 Asistencia
-    $todayAttendance = [];
-    $asistenciaModel = new Asistencia();
-    $asistencias = $asistenciaModel->all();
-    
-    foreach($asistencias as $asist) {
-        if($asist->usuario_id == $studentId && $asist->fecha == $today) {
-            
-            $horarioId = $asist->horario_id;
-            $cursoNombre = '';
-            
-            foreach($horarios as $h) {
-                if($h->id == $horarioId) {
-                    foreach($cursos as $c) {
-                        if($c->id == $h->curso_id) {
-                            $cursoNombre = $c->nombre;
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-            
-            $todayAttendance[] = [
-                'curso_nombre' => $cursoNombre,
-                'estado' => $asist->estado
-            ];
-        }
-    }
+
+    // asegurar tipo de dato
+    $dayOfWeek = in_array($dayOfWeek, ['L','M','X','J','V']) ? $dayOfWeek : 'L'; 
+
+    // 📜 clases de hoy
+    $sql = "SELECT
+                c.nombre as curso_nombre,
+                c.icono,
+                c.color,
+                h.hora_inicio,
+                h.hora_fin,
+                h.aula
+            FROM cl_horarios h INNER JOIN cl_cursos c ON c.id = h.curso_id
+            INNER JOIN cl_matriculas m ON m.curso_id = c.id
+            WHERE m.usuario_id = $studentId AND m.activo = 1
+            AND h.dia_semana = '$dayOfWeek'
+            ORDER BY h.hora_inicio";
+
+    $todaySchedule = $db->select($sql);
 
 
-    
-    // 📜📜 Proximas ..limite
-    $upcomingEvents = [];
-    $eventoModel = new Evento();
-    $eventos = $eventoModel->all();
-    
+    // 📜 estado de asistencia de hoy
+    $sql = "SELECT 
+                c.nombre as curso_nombre,
+                a.estado
+            FROM cl_asistencias a
+            INNER JOIN cl_horarios h ON h.id = a.horario_id
+            INNER JOIN cl_cursos c ON c.id = h.curso_id
+            WHERE a.usuario_id = ?
+            AND a.fecha = ?";
+
+    $todayAttendance = $db->select($sql, [$studentId, $today]);
+
+    // 📜 proximas.. limites
     $now = date('Y-m-d H:i:s');
-    foreach($eventos as $evento) {
-        if(in_array($evento->curso_id, $courseIds) && 
-           $evento->fecha_limite >= $now && 
-           !$evento->completado) {
-            $upcomingEvents[] = [
-                'titulo' => $evento->titulo,
-                'tipo' => $evento->tipo,
-                'fecha_limite' => $evento->fecha_limite
-            ];
-        }
-    }
+    $sql = "SELECT 
+                e.titulo,
+                e.tipo,
+                e.fecha_limite
+            FROM cl_eventos e
+            INNER JOIN cl_matriculas m ON m.curso_id = e.curso_id
+            WHERE m.usuario_id = ?
+            AND m.activo = 1
+            AND e.fecha_limite >= ?
+            AND e.completado = 0
+            ORDER BY e.fecha_limite ASC
+            LIMIT 10";
     
+    $upcomingEvents = $db->select($sql, [$studentId, $now]);
 
+    // 📜 % de asistencia
 
-    // 📜📜 Porcentaje de asistencia
     $attendanceStats = $this->getAttendanceStats($studentId);
-
+    
     echo json_encode([
         'success' => true,
         'data' => [
@@ -139,9 +104,12 @@ class ApiStudent extends ApiController
             'today_schedule' => $todaySchedule,
             'today_attendance' => $todayAttendance,
             'upcoming_events' => $upcomingEvents,
-            'attendance_stats' => $attendanceStats 
+            'attendance_stats' => $attendanceStats
         ]
     ]);
+
+    exit;
+
 }
     
     private function getCourses($studentId)
@@ -160,42 +128,43 @@ class ApiStudent extends ApiController
 
     private function getAttendanceStats($studentId)
     {
-        $asistenciaModel = new Asistencia();
-        $asistencias = $asistenciaModel->all();
-        
-        $totalClasses = 0;
-        $presentCount = 0;
-        $tardeCount = 0; 
-        $ausenteCount = 0; 
-        
-        foreach($asistencias as $asist) {
-            if($asist->usuario_id == $studentId) {
-                $totalClasses++;
-                
-                switch($asist->estado) {
-                    case 'presente':
-                        $presentCount++;
-                        break;
-                    case 'tarde':
-                        $tardeCount++;
-                        break;
-                    case 'ausente':
-                        $ausenteCount++;
-                        break;
-                }
+        $db = new DataBase();
+
+        $sql = "SELECT estado, COUNT(*) as count
+        FROM cl_asistencias WHERE usuario_id = ?
+        GROUP BY estado";
+
+        $results = $db->select($sql, [$studentId]);
+
+        $stats = [
+            'presente'=>0,
+            'late'=>0,
+            'absent'=>0,
+            'total'=>0
+        ];
+
+        foreach($results as $row){
+            $count = (int)$row['count'];
+            $stats['total']+=$count;
+
+            switch($row['estado']){
+                case 'presente':
+                    $stats['presente'] = $count;
+                    break;
+                case 'tarde':
+                    $stats['late'] = $count;
+                    break;
+                case 'ausente':
+                    $stats['absent'] = $count;
+                    break;
             }
         }
-        
-        $percentage = $totalClasses > 0 
-            ? round(($presentCount / $totalClasses) * 100) 
-            : 0;
-        
-        return [
-            'percentage' => $percentage,
-            'present' => $presentCount,
-            'late' => $tardeCount,
-            'absent' => $ausenteCount,
-            'total' => $totalClasses
-        ];
+
+        $stats['percentage'] = $stats['total'] > 0
+        ? round(($stats['presente'] / $stats['total']) * 100)
+        : 0;
+
+
+        return $stats;
     }
 }
