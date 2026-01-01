@@ -50,13 +50,13 @@ class ApiStudent extends ApiController
                 c.nombre as curso_nombre,
                 c.icono,
                 c.color,
-                h.hora_inicio,
-                h.hora_fin,
+                TIME_FORMAT(h.hora_inicio, '%H:%i') as hora_inicio,
+                TIME_FORMAT(h.hora_fin, '%H:%i') as hora_fin,
                 h.aula
             FROM cl_horarios h INNER JOIN cl_cursos c ON c.id = h.curso_id
             INNER JOIN cl_matriculas m ON m.curso_id = c.id
-            WHERE m.usuario_id = $studentId AND m.activo = 1
-            AND h.dia_semana = '$dayOfWeek'
+            WHERE m.usuario_id = {$studentId} AND m.activo = 1
+            AND h.dia_semana = '{$dayOfWeek}'
             ORDER BY h.hora_inicio";
 
     $todaySchedule = $db->select($sql);
@@ -69,10 +69,10 @@ class ApiStudent extends ApiController
             FROM cl_asistencias a
             INNER JOIN cl_horarios h ON h.id = a.horario_id
             INNER JOIN cl_cursos c ON c.id = h.curso_id
-            WHERE a.usuario_id = ?
-            AND a.fecha = ?";
+            WHERE a.usuario_id = {$studentId}
+            AND a.fecha = '{$today}'";
 
-    $todayAttendance = $db->select($sql, [$studentId, $today]);
+    $todayAttendance = $db->select($sql);
 
     // 📜 proximas.. limites
     $now = date('Y-m-d H:i:s');
@@ -82,14 +82,14 @@ class ApiStudent extends ApiController
                 e.fecha_limite
             FROM cl_eventos e
             INNER JOIN cl_matriculas m ON m.curso_id = e.curso_id
-            WHERE m.usuario_id = ?
+            WHERE m.usuario_id = $studentId
             AND m.activo = 1
-            AND e.fecha_limite >= ?
+            AND e.fecha_limite >= '{$now}'
             AND e.completado = 0
             ORDER BY e.fecha_limite ASC
             LIMIT 10";
     
-    $upcomingEvents = $db->select($sql, [$studentId, $now]);
+    $upcomingEvents = $db->select($sql);
 
     // 📜 % de asistencia
 
