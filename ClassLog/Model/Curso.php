@@ -23,6 +23,20 @@ class Curso extends ModelClass
         $this->color = '#3B82F6';
     }
 
+    public function profesorNombre(): string
+    {
+        if(empty($this->profesor_id)){
+            return '-';
+        }
+
+        $profefor = new Profesor();
+        if($profefor->load($this->profesor_id)){
+            return $profefor->nombre;
+        }
+
+        return '-';
+    }
+
     public static function primaryColumn(): string
     {
         return 'id';

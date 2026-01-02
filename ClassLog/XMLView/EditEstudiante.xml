@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<view>
+    <columns>
+        <group name="basic" numcolumns="12" title="Información Básica">
+            <column name="nombre" numcolumns="6" order="100">
+                <widget type="text" fieldname="nombre" required="true" />
+            </column>
+            <column name="email" numcolumns="6" order="110">
+                <widget type="email" fieldname="email" required="true" />
+            </column>
+            <column name="telefono" numcolumns="6" order="120">
+                <widget type="text" fieldname="telefono" />
+            </column>
+            <column name="fecha_nacimiento" numcolumns="6" order="130">
+                <widget type="date" fieldname="fecha_nacimiento" />
+            </column>
+        </group>
+        
+        <group name="additional" numcolumns="12" title="Información Adicional">
+            <column name="direccion" numcolumns="12" order="200">
+                <widget type="textarea" fieldname="direccion" />
+            </column>
+            <column name="codigo_postal" numcolumns="4" order="210">
+                <widget type="text" fieldname="codigo_postal" />
+            </column>
+            <column name="ciudad" numcolumns="4" order="220">
+                <widget type="text" fieldname="ciudad" />
+            </column>
+            <column name="activo" numcolumns="4" order="230">
+                <widget type="checkbox" fieldname="activo" />
+            </column>
+        </group>
+    </columns>
+</view>
