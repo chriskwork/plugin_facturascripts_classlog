@@ -16,6 +16,8 @@ class Estudiante extends ModelClass
     public $password_hash;
     public $telefono;
     public $avatar_url;
+    public $asignatura;
+    public $descripcion;
     public $created_at;
     public $updated_at;
 
