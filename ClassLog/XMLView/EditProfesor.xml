@@ -5,13 +5,16 @@
             <column name="Nombre" numcolumns="6" order="100">
                 <widget type="text" fieldname="nombre" required="true" />
             </column>
-            <column name="Email" numcolumns="6" order="110">
+            <column name="Apellidos" numcolumns="6" order="110">
+                <widget type="text" fieldname="apellidos" />
+            </column>
+            <column name="Email" numcolumns="6" order="120">
                 <widget type="email" fieldname="email" required="true" />
             </column>
-            <column name="Telefono" numcolumns="6" order="120">
+            <column name="Telefono" numcolumns="6" order="130">
                 <widget type="text" fieldname="telefono" />
             </column>
-            <column name="Especialidad" numcolumns="6" order="130">
+            <column name="Especialidad" numcolumns="6" order="140">
                 <widget type="text" fieldname="especialidad" />
             </column>
         </group>
