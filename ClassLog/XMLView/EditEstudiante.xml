@@ -15,7 +15,12 @@
                 <widget type="text" fieldname="telefono" />
             </column>
             <column name="Asignatura" numcolumns="6" order="140">
-                <widget type="text" fieldname="asignatura" required="true" />
+                <widget type="select" fieldname="asignatura" required="true">
+                    <values title="Administracion">Administracion</values>
+                    <values title="Marketing">Marketing</values>
+                    <values title="DAM">Desarrollo Aplicacion Multiplataforma</values>
+                    <values title="Desarrollo Wordpress">Desarrollo Wordpress</values>
+                </widget>
             </column>
         </group>
         
