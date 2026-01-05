@@ -2,26 +2,18 @@
 <view>
     <columns>
         <group name="data" numcolumns="12" title="Información del Curso">
-            <column name="nombre" numcolumns="12" order="100">
+            <column name="Nombre de curso" numcolumns="12" order="100">
                 <widget type="text" fieldname="nombre" required="true" />
             </column>
-            <column name="descripcion" numcolumns="12" order="110">
+            <column name="Descripcion" numcolumns="12" order="110">
                 <widget type="textarea" fieldname="descripcion" />
             </column>
-            <column name="profesor_id" numcolumns="6" order="120">
+            <column name="Profesor" numcolumns="6" order="120">
                 <widget type="select" fieldname="profesor_id" required="true">
-                    <values source="profesores" fieldcode="id" fieldtitle="nombre" />
+                    <values source="cl_profesores" fieldcode="id" fieldtitle="nombre" />
                 </widget>
             </column>
-            <!-- <column name="fecha_inicio" numcolumns="3" order="130">
-                <widget type="date" fieldname="fecha_inicio" required="true" />
-            </column>
-            <column name="fecha_fin" numcolumns="3" order="140">
-                <widget type="date" fieldname="fecha_fin" />
-            </column> -->
-            <column name="activo" numcolumns="12" order="150">
-                <widget type="checkbox" fieldname="activo" />
-            </column>
+
         </group>
     </columns>
 </view>

@@ -26,15 +26,17 @@ class Curso extends ModelClass
     public function profesorNombre(): string
     {
         if(empty($this->profesor_id)){
-            return '-';
+            return 'Sin profesor';
         }
 
-        $profefor = new Profesor();
-        if($profefor->load($this->profesor_id)){
-            return $profefor->nombre;
+        $profesor = new Profesor();
+        $profesor->load('id', $this->profesor_id);
+
+        if(!empty($profesor->nombre)){
+            return trim($profesor->nombre . ' ' . $profesor->apellidos);
         }
 
-        return '-';
+        return 'Profesor no encontrado (ID: ' . $this->profesor_id . ')';
     }
 
     public static function primaryColumn(): string
