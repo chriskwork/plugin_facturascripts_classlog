@@ -23,7 +23,7 @@ class ListEstudiante extends ListController
     {
         $this->addView('ListEstudiante', 'Estudiante', 'Estudiantes', 'fas fa-user-graduate')
         ->addOrderBy(['id'], 'id')
-        ->addOrderBy(['nombre'], 'nombre')
+        ->addOrderBy(['asignatura'], 'asignatura')
         ->addSearchFields(['nombre', 'email']);
 
     }
