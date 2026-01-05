@@ -17,18 +17,10 @@
         </group>
         
         <group name="additional" numcolumns="12" title="Información Adicional">
-            <column name="direccion" numcolumns="12" order="200">
-                <widget type="textarea" fieldname="direccion" />
+            <column name="descripcion" numcolumns="12" order="200">
+                <widget type="textarea" fieldname="descripcion" />
             </column>
-            <column name="codigo_postal" numcolumns="4" order="210">
-                <widget type="text" fieldname="codigo_postal" />
-            </column>
-            <column name="ciudad" numcolumns="4" order="220">
-                <widget type="text" fieldname="ciudad" />
-            </column>
-            <column name="activo" numcolumns="4" order="230">
-                <widget type="checkbox" fieldname="activo" />
-            </column>
+            
         </group>
     </columns>
 </view>
