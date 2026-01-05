@@ -1,0 +1,126 @@
+{% extends "Master/MenuTemplate.html.twig" %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-check fa-fw"></i> Pasar Asistencia
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% set horario = fsc.getHorarioInfo() %}
+                    {% set curso = fsc.getCursoInfo() %}
+                    {% set estudiantes = fsc.getEstudiantesList() %}
+
+                    {% if horario %}
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h4>{{ curso.nombre }}</h4>
+                                <p class="text-muted">
+                                    <i class="fas fa-clock"></i> {{ horario.hora_inicio|date('H:i') }} - {{ horario.hora_fin|date('H:i') }}
+                                    {% if horario.aula %}
+                                        <br><i class="fas fa-door-open"></i> Aula: {{ horario.aula }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <p class="text-muted">
+                                    <i class="fas fa-calendar"></i> {{ "now"|date('d/m/Y') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <form action="{{ fsc.url() }}" method="post" name="formAsistencia">
+                            <input type="hidden" name="action" value="marcar-asistencia"/>
+                            <input type="hidden" name="horario_id" value="{{ horario.id }}"/>
+                            {{ formToken() }}
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th width="50">
+                                                <input type="checkbox" id="selectAll" onclick="toggleAll(this)"/>
+                                            </th>
+                                            <th>Estudiante</th>
+                                            <th>Email</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for estudiante in estudiantes %}
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox"
+                                                       name="estudiantes[]"
+                                                       value="{{ estudiante.id }}"
+                                                       class="estudiante-checkbox"
+                                                       {% if estudiante.presente %}checked{% endif %} />
+                                            </td>
+                                            <td>
+                                                <strong>{{ estudiante.nombre }} {{ estudiante.apellidos }}</strong>
+                                            </td>
+                                            <td>{{ estudiante.email }}</td>
+                                            <td>
+                                                {% if estudiante.presente %}
+                                                    <span class="badge badge-success">
+                                                        <i class="fas fa-check"></i> Presente
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">
+                                                        <i class="fas fa-minus"></i> Sin marcar
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">
+                                                <i class="fas fa-info-circle"></i> No hay estudiantes matriculados en este curso
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {% if estudiantes|length > 0 %}
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-save"></i> Guardar Asistencia
+                                    </button>
+                                    <a href="{{ asset('ListAsistencia') }}" class="btn btn-secondary btn-lg ml-2">
+                                        <i class="fas fa-arrow-left"></i> Volver
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </form>
+
+                        <script>
+                            function toggleAll(source) {
+                                var checkboxes = document.getElementsByClassName('estudiante-checkbox');
+                                for (var i = 0; i < checkboxes.length; i++) {
+                                    checkboxes[i].checked = source.checked;
+                                }
+                            }
+                        </script>
+
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> No se encontró información del horario
+                        </div>
+                        <a href="{{ asset('ListAsistencia') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver a Lista
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
