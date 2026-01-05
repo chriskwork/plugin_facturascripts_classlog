@@ -6,7 +6,7 @@
                 <widget type="text" fieldname="nombre" required="true" />
             </column>
             <column name="Apellidos" numcolumns="6" order="110">
-                <widget type="text" fieldname="apellidos" />
+                <widget type="text" fieldname="apellidos" required="true" />
             </column>
             <column name="Email" numcolumns="6" order="120">
                 <widget type="email" fieldname="email" required="true" />

@@ -15,7 +15,7 @@
                 <widget type="text" fieldname="telefono" />
             </column>
             <column name="Asignatura" numcolumns="6" order="140">
-                <widget type="text" fieldname="asignatura" />
+                <widget type="text" fieldname="asignatura" required="true" />
             </column>
         </group>
         
