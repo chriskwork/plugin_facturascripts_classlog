@@ -92,7 +92,6 @@ class ApiStudent extends ApiController
     $upcomingEvents = $db->select($sql);
 
     // 📜 % de asistencia
-
     $attendanceStats = $this->getAttendanceStats($studentId);
     
     echo json_encode([
@@ -130,40 +129,44 @@ class ApiStudent extends ApiController
     {
         $db = new DataBase();
 
-        $sql = "SELECT estado, COUNT(*) as count
-        FROM cl_asistencias WHERE usuario_id = ?
-        GROUP BY estado";
+        // SQL Injection 방지를 위해 intval() 사용
+        $studentId = intval($studentId);
 
-        $results = $db->select($sql, [$studentId]);
+        $sql = "SELECT estado, COUNT(*) as count
+                FROM cl_asistencias 
+                WHERE usuario_id = {$studentId}
+                GROUP BY estado";
+
+        $results = $db->select($sql);
 
         $stats = [
-            'presente'=>0,
-            'late'=>0,
-            'absent'=>0,
-            'total'=>0
+            'presente' => 0,
+            'tarde' => 0,
+            'ausente' => 0,
+            'total' => 0
         ];
 
-        foreach($results as $row){
+        foreach ($results as $row) {
             $count = (int)$row['count'];
-            $stats['total']+=$count;
+            $stats['total'] += $count;
 
-            switch($row['estado']){
+            switch ($row['estado']) {
                 case 'presente':
                     $stats['presente'] = $count;
                     break;
                 case 'tarde':
-                    $stats['late'] = $count;
+                    $stats['tarde'] = $count;
                     break;
                 case 'ausente':
-                    $stats['absent'] = $count;
+                    $stats['ausente'] = $count;
                     break;
             }
         }
 
+        // percentage 계산
         $stats['percentage'] = $stats['total'] > 0
-        ? round(($stats['presente'] / $stats['total']) * 100)
-        : 0;
-
+            ? round(($stats['presente'] / $stats['total']) * 100)
+            : 0;
 
         return $stats;
     }
