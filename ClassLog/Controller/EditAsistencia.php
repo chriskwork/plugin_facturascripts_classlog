@@ -35,9 +35,21 @@ class EditAsistencia extends Controller
 
     private function marcarAsistenciaAction(): void
     {
-        $horarioId = filter_input(INPUT_POST, 'horario_id');
-        $estudiantesPresentes = filter_input(INPUT_POST, 'estudiantes', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY) ?? [];
+        // 디버깅 로그
+        Tools::log()->notice('=== marcarAsistenciaAction START ===');
+        
+        // POST 데이터 받기
+        $horarioId = $this->request->request->get('horario_id');
+        
+        // estudiantes 배열 - $_POST 직접 사용
+        $estudiantesPresentes = $_POST['estudiantes'] ?? [];
+        
         $fecha = date('Y-m-d');
+
+        // Tools::log()->notice('horario_id: ' . $horarioId);
+        // Tools::log()->notice('estudiantes (raw): ' . json_encode($estudiantesPresentes));
+        // Tools::log()->notice('estudiantes count: ' . count($estudiantesPresentes));
+        // Tools::log()->notice('fecha: ' . $fecha);
 
         if (empty($horarioId)) {
             Tools::log()->error('no-horario-specified');
@@ -45,18 +57,19 @@ class EditAsistencia extends Controller
         }
 
         if (!is_array($estudiantesPresentes)) {
+            Tools::log()->warning('estudiantes is not array, converting...');
             $estudiantesPresentes = [];
         }
 
-        // 1. Obtener TODOS los estudiantes del curso
-        $todosEstudiantes = $this->getEstudiantesList();
+        // horarioId를 파라미터로 전달
+        $todosEstudiantes = $this->getEstudiantesList($horarioId);
+        
+        Tools::log()->notice('Total estudiantes: ' . count($todosEstudiantes));
 
-        // 2. Para cada estudiante del curso
         foreach ($todosEstudiantes as $estudiante) {
             $usuarioId = $estudiante['id'];
             $asistencia = new Asistencia();
 
-            // Verificar si ya existe registro para hoy
             $where = [
                 new DataBaseWhere('usuario_id', $usuarioId),
                 new DataBaseWhere('horario_id', $horarioId),
@@ -65,41 +78,57 @@ class EditAsistencia extends Controller
 
             $existing = $asistencia->all($where, [], 0, 1);
 
-            // Determinar el estado según si está en el array de presentes
-            $nuevoEstado = in_array($usuarioId, $estudiantesPresentes) ? 'presente' : 'ausente';
+            $nuevoEstado = in_array($usuarioId, $estudiantesPresentes) 
+                            ? 'presente' 
+                            : 'ausente';
+
+            Tools::log()->notice("Usuario {$usuarioId}: estado = {$nuevoEstado}, in_array = " . (in_array($usuarioId, $estudiantesPresentes) ? 'true' : 'false'));
 
             if (!empty($existing)) {
-                // Ya existe → actualizar solo si cambió
+                // 업데이트
                 $asistencia = $existing[0];
+                
                 if ($asistencia->estado !== $nuevoEstado) {
                     $asistencia->estado = $nuevoEstado;
-                    $asistencia->save();
+                    
+                    if ($asistencia->save()) {
+                        Tools::log()->notice("Updated usuario {$usuarioId}");
+                    } else {
+                        Tools::log()->error("Failed to update usuario {$usuarioId}");
+                    }
                 }
             } else {
-                // No existe → crear nuevo solo si está presente
-                // (ausencias no se guardan automáticamente en el primer guardado)
+                // presente만 새로 저장
                 if ($nuevoEstado === 'presente') {
                     $asistencia->usuario_id = $usuarioId;
                     $asistencia->horario_id = $horarioId;
                     $asistencia->fecha = $fecha;
                     $asistencia->estado = $nuevoEstado;
-                    $asistencia->save();
+                    
+                    if ($asistencia->save()) {
+                        Tools::log()->notice("Inserted usuario {$usuarioId}");
+                    } else {
+                        Tools::log()->error("Failed to insert usuario {$usuarioId}");
+                    }
                 }
             }
         }
 
+        Tools::log()->notice('=== marcarAsistenciaAction END ===');
         Tools::log()->notice('record-updated-correctly');
     }
 
-    public function getEstudiantesList(): array
+    public function getEstudiantesList($horarioId = null): array
     {
-        $horarioId = filter_input(INPUT_GET, 'code');
+        // POST 요청일 때는 파라미터로 받기
+        if ($horarioId === null) {
+            $horarioId = filter_input(INPUT_GET, 'code');
+        }
 
         if (empty($horarioId)) {
             return [];
         }
 
-        // horario 정보 가져오기
         $horario = new Horario();
         $horarios = $horario->all([new DataBaseWhere('id', $horarioId)], [], 0, 1);
 
@@ -109,7 +138,6 @@ class EditAsistencia extends Controller
 
         $horario = $horarios[0];
 
-        // curso의 학생들 가져오기
         $matriculaModel = new Matricula();
         $where = [
             new DataBaseWhere('curso_id', $horario->curso_id),
@@ -120,7 +148,6 @@ class EditAsistencia extends Controller
 
         $estudiantes = [];
         foreach ($matriculas as $matricula) {
-            // 학생 정보 가져오기
             $sql = "SELECT u.id, u.nombre, u.apellidos, u.email
                     FROM cl_usuarios u
                     WHERE u.id = " . intval($matricula->usuario_id);
@@ -131,7 +158,6 @@ class EditAsistencia extends Controller
             if (!empty($result)) {
                 $estudiante = $result[0];
 
-                // 오늘 이미 출석 체크했는지 확인
                 $asistenciaModel = new Asistencia();
                 $whereAsistencia = [
                     new DataBaseWhere('usuario_id', $estudiante['id']),

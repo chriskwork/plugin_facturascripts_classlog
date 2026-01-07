@@ -10,8 +10,12 @@ class Init extends InitClass
     public function init(): void
     {
         // Registra la nueva ruta en la API y vincúlala al controlador personalizado
+        Kernel::addRoute('/api/3/cl-auth', 'ApiAuth', -1);
+        ApiRoot::addCustomResource('cl-auth');
+
         Kernel::addRoute('/api/3/cl-student', 'ApiStudent', -1);
         ApiRoot::addCustomResource('cl-student');
+
     }
 
     public function uninstall(): void

@@ -19,10 +19,21 @@ class ApiStudent extends ApiController
 
     protected function runResource(): void
     {
+        // Set CORS headers
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Token, Authorization');
+        header('Access-Control-Max-Age: 86400');
+        header('Content-Type: application/json');
+
+        // Handle preflight OPTIONS request
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            http_response_code(200);
+            exit;
+        }
+
         $action = $this->request->query->get('action', '');
         $studentId = $this->request->query->get('id', '');
-        
-        header('Content-Type: application/json');
         
         switch($action) {
             case 'dashboard':
@@ -30,6 +41,9 @@ class ApiStudent extends ApiController
                 break;
             case 'courses':
                 $this->getCourses($studentId);
+                break;
+            case 'calendar':
+                $this->getCalendar($studentId);
                 break;
             default:
                 echo json_encode(['error' => 'Invalid action']);
@@ -113,10 +127,73 @@ class ApiStudent extends ApiController
     
     private function getCourses($studentId)
     {
+        $db = new DataBase();
+
+        // SQL Injection 방지
+        $studentId = intval($studentId);
+
+        // Get courses with schedule and attendance stats
+        $sql = "SELECT
+                    c.id,
+                    c.nombre,
+                    c.descripcion,
+                    c.icono,
+                    c.color,
+                    u.nombre as profesor_nombre,
+                    GROUP_CONCAT(DISTINCT h.dia_semana ORDER BY h.dia_semana) as dias,
+                    MIN(h.hora_inicio) as hora_inicio,
+                    MAX(h.hora_fin) as hora_fin,
+                    GROUP_CONCAT(DISTINCT h.aula) as aula
+                FROM cl_cursos c
+                INNER JOIN cl_matriculas m ON m.curso_id = c.id
+                LEFT JOIN cl_usuarios u ON u.id = c.profesor_id
+                LEFT JOIN cl_horarios h ON h.curso_id = c.id
+                WHERE m.usuario_id = {$studentId}
+                AND m.activo = 1
+                GROUP BY c.id, c.nombre, c.descripcion, c.icono, c.color, u.nombre";
+
+        $courses = $db->select($sql);
+
+        // Add attendance stats for each course
+        foreach ($courses as &$course) {
+            $courseId = $course['id'];
+
+            // Get attendance stats for this course
+            $statsSql = "SELECT
+                            a.estado,
+                            COUNT(*) as count
+                        FROM cl_asistencias a
+                        INNER JOIN cl_horarios h ON h.id = a.horario_id
+                        WHERE h.curso_id = {$courseId}
+                        AND a.usuario_id = {$studentId}
+                        GROUP BY a.estado";
+
+            $stats = $db->select($statsSql);
+
+            $presente = 0;
+            $total = 0;
+
+            foreach ($stats as $stat) {
+                $count = (int)$stat['count'];
+                $total += $count;
+                if ($stat['estado'] === 'presente') {
+                    $presente = $count;
+                }
+            }
+
+            $course['asistencia_percentage'] = $total > 0
+                ? round(($presente / $total) * 100)
+                : 0;
+            $course['asistencia_presente'] = $presente;
+            $course['asistencia_total'] = $total;
+        }
+
         echo json_encode([
             'success' => true,
-            'message' => 'Courses endpoint'
+            'data' => $courses
         ]);
+
+        exit;
     }
     
     private function getDayOfWeekLetter($dayNumber)
@@ -169,5 +246,39 @@ class ApiStudent extends ApiController
             : 0;
 
         return $stats;
+    }
+
+    private function getCalendar($studentId)
+    {
+        $db = new DataBase();
+
+        // SQL Injection 방지
+        $studentId = intval($studentId);
+
+        // Get all events for courses the student is enrolled in
+        $sql = "SELECT
+                    e.id,
+                    e.curso_id,
+                    e.tipo,
+                    e.titulo,
+                    e.descripcion,
+                    e.fecha_limite,
+                    e.completado,
+                    c.nombre as curso_nombre
+                FROM cl_eventos e
+                INNER JOIN cl_cursos c ON c.id = e.curso_id
+                INNER JOIN cl_matriculas m ON m.curso_id = c.id
+                WHERE m.usuario_id = {$studentId}
+                AND m.activo = 1
+                ORDER BY e.fecha_limite ASC";
+
+        $events = $db->select($sql);
+
+        echo json_encode([
+            'success' => true,
+            'data' => $events
+        ]);
+
+        exit;
     }
 }
