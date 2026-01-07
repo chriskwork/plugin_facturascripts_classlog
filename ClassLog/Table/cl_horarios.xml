@@ -27,7 +27,7 @@
     </column>
     <column>
         <name>aula</name>
-        <type>character varying(50)</type>
+        <type>character varying(10)</type>
         <null>YES</null>
     </column>
     <constraint>

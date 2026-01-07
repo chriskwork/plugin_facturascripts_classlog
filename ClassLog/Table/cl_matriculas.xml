@@ -21,12 +21,7 @@
         <default>CURRENT_DATE</default>
         <null>YES</null>
     </column>
-    <column>
-        <name>activo</name>
-        <type>boolean</type>
-        <default>TRUE</default>
-        <null>YES</null>
-    </column>
+
     <constraint>
         <name>cl_matriculas_pkey</name>
         <type>PRIMARY KEY (id)</type>

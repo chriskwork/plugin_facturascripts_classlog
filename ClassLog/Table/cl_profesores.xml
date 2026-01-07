@@ -17,12 +17,17 @@
     </column>
     <column>
         <name>email</name>
-        <type>character varying(255)</type>
+        <type>character varying(100)</type>
         <null>YES</null>
     </column>
     <column>
         <name>telefono</name>
         <type>character varying(20)</type>
+        <null>YES</null>
+    </column>
+    <column>
+        <name>especialidad</name>
+        <type>character varying(50)</type>
         <null>YES</null>
     </column>
     <constraint>

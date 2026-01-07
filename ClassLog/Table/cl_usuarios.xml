@@ -7,7 +7,7 @@
     </column>
     <column>
         <name>email</name>
-        <type>character varying(255)</type>
+        <type>character varying(100)</type>
         <null>NO</null>
     </column>
     <column>
@@ -33,6 +33,16 @@
     <column>
         <name>avatar_url</name>
         <type>character varying(500)</type>
+        <null>YES</null>
+    </column>
+    <column>
+        <name>asignatura</name>
+        <type>character varying(100)</type>
+        <null>YES</null>
+    </column>
+    <column>
+        <name>descripcion</name>
+        <type>text</type>
         <null>YES</null>
     </column>
     <column>
