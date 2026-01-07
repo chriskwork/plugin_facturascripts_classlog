@@ -13,14 +13,12 @@ class Matricula extends ModelClass
     public $usuario_id;
     public $curso_id;
     public $fecha_matricula;
-    public $activo;
     
 
     public function clear(): void
     {
         parent::clear();
         $this->fecha_matricula = Tools::date();
-        $this->activo = true;
     }
 
     public static function primaryColumn(): string

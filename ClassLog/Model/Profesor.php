@@ -14,6 +14,7 @@ class Profesor extends ModelClass
     public $apellidos;
     public $email;
     public $telefono;
+    public $especialidad;
     
 
     public function clear(): void
