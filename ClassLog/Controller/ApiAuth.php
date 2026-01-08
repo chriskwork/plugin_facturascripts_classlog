@@ -40,8 +40,10 @@ class ApiAuth extends ApiController
         error_log("API Request - REQUEST_URI: " . $_SERVER['REQUEST_URI']);
         error_log("API Request - REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
 
-        // Try to get action from JSON body first, then fall back to request params
-        $action = isset($jsonData['action']) ? $jsonData['action'] : $this->request->request->get('action', '');
+        // Try to get action from JSON body first, then URL query params, then POST params
+        $action = isset($jsonData['action'])
+            ? $jsonData['action']
+            : ($this->request->query->get('action', '') ?: $this->request->request->get('action', ''));
 
         error_log("API Request - Action: " . $action);
 
