@@ -69,7 +69,7 @@ class ApiStudent extends ApiController
                 h.aula
             FROM cl_horarios h INNER JOIN cl_cursos c ON c.id = h.curso_id
             INNER JOIN cl_matriculas m ON m.curso_id = c.id
-            WHERE m.usuario_id = {$studentId} AND m.activo = 1
+            WHERE m.usuario_id = {$studentId}
             AND h.dia_semana = '{$dayOfWeek}'
             ORDER BY h.hora_inicio";
 
@@ -97,7 +97,6 @@ class ApiStudent extends ApiController
             FROM cl_eventos e
             INNER JOIN cl_matriculas m ON m.curso_id = e.curso_id
             WHERE m.usuario_id = $studentId
-            AND m.activo = 1
             AND e.fecha_limite >= '{$now}'
             AND e.completado = 0
             ORDER BY e.fecha_limite ASC
@@ -149,7 +148,6 @@ class ApiStudent extends ApiController
                 LEFT JOIN cl_usuarios u ON u.id = c.profesor_id
                 LEFT JOIN cl_horarios h ON h.curso_id = c.id
                 WHERE m.usuario_id = {$studentId}
-                AND m.activo = 1
                 GROUP BY c.id, c.nombre, c.descripcion, c.icono, c.color, u.nombre";
 
         $courses = $db->select($sql);
@@ -269,7 +267,6 @@ class ApiStudent extends ApiController
                 INNER JOIN cl_cursos c ON c.id = e.curso_id
                 INNER JOIN cl_matriculas m ON m.curso_id = c.id
                 WHERE m.usuario_id = {$studentId}
-                AND m.activo = 1
                 ORDER BY e.fecha_limite ASC";
 
         $events = $db->select($sql);

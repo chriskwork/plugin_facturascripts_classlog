@@ -46,11 +46,6 @@ class EditAsistencia extends Controller
         
         $fecha = date('Y-m-d');
 
-        // Tools::log()->notice('horario_id: ' . $horarioId);
-        // Tools::log()->notice('estudiantes (raw): ' . json_encode($estudiantesPresentes));
-        // Tools::log()->notice('estudiantes count: ' . count($estudiantesPresentes));
-        // Tools::log()->notice('fecha: ' . $fecha);
-
         if (empty($horarioId)) {
             Tools::log()->error('no-horario-specified');
             return;
@@ -141,7 +136,7 @@ class EditAsistencia extends Controller
         $matriculaModel = new Matricula();
         $where = [
             new DataBaseWhere('curso_id', $horario->curso_id),
-            new DataBaseWhere('activo', true)
+            // new DataBaseWhere('activo', true)
         ];
 
         $matriculas = $matriculaModel->all($where, [], 0, 0);
