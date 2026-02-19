@@ -1,4 +1,5 @@
 <?php
+
 namespace FacturaScripts\Plugins\ClassLog\Controller;
 
 use FacturaScripts\Core\Template\ApiController;
@@ -13,20 +14,17 @@ use FacturaScripts\Plugins\ClassLog\Model\Calificacion;
 
 use function PHPSTORM_META\type;
 
-class ApiStudent extends ApiController
-{
-    
+class ApiStudent extends ApiController {
 
-    protected function runResource(): void
-    {
-        // Set CORS headers
+
+    protected function runResource(): void {
+
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Token, Authorization');
         header('Access-Control-Max-Age: 86400');
         header('Content-Type: application/json');
 
-        // Handle preflight OPTIONS request
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             http_response_code(200);
             exit;
@@ -34,8 +32,8 @@ class ApiStudent extends ApiController
 
         $action = $this->request->query->get('action', '');
         $studentId = $this->request->query->get('id', '');
-        
-        switch($action) {
+
+        switch ($action) {
             case 'dashboard':
                 $this->getDashboard($studentId);
                 break;
@@ -49,18 +47,18 @@ class ApiStudent extends ApiController
                 echo json_encode(['error' => 'Invalid action']);
         }
     }
-    
-    private function getDashboard($studentId)
-{
-    $db = new DataBase();
-    $today = date('Y-m-d');
-    $dayOfWeek = $this->getDayOfWeekLetter(date('N'));
 
-    // asegurar tipo de dato
-    $dayOfWeek = in_array($dayOfWeek, ['L','M','X','J','V']) ? $dayOfWeek : 'L'; 
+    // obtener los datos de usuario id = x
+    private function getDashboard($studentId) {
+        $db = new DataBase();
+        $today = date('Y-m-d');
+        $dayOfWeek = $this->getDayOfWeekLetter(date('N'));
 
-    // 📜 clases de hoy
-    $sql = "SELECT
+        // validar dia de la semana
+        $dayOfWeek = in_array($dayOfWeek, ['L', 'M', 'X', 'J', 'V']) ? $dayOfWeek : 'L';
+
+        // clases de hoy
+        $sql = "SELECT
                 c.nombre as curso_nombre,
                 c.icono,
                 c.color,
@@ -73,11 +71,11 @@ class ApiStudent extends ApiController
             AND h.dia_semana = '{$dayOfWeek}'
             ORDER BY h.hora_inicio";
 
-    $todaySchedule = $db->select($sql);
+        $todaySchedule = $db->select($sql);
 
 
-    // 📜 estado de asistencia de hoy
-    $sql = "SELECT 
+        // asistencia de hoy
+        $sql = "SELECT 
                 c.nombre as curso_nombre,
                 a.estado
             FROM cl_asistencias a
@@ -86,11 +84,11 @@ class ApiStudent extends ApiController
             WHERE a.usuario_id = {$studentId}
             AND a.fecha = '{$today}'";
 
-    $todayAttendance = $db->select($sql);
+        $todayAttendance = $db->select($sql);
 
-    // 📜 proximas.. limites
-    $now = date('Y-m-d H:i:s');
-    $sql = "SELECT 
+        // próximos eventos
+        $now = date('Y-m-d H:i:s');
+        $sql = "SELECT 
                 e.titulo,
                 e.tipo,
                 e.fecha_limite
@@ -101,37 +99,35 @@ class ApiStudent extends ApiController
             AND e.completado = 0
             ORDER BY e.fecha_limite ASC
             LIMIT 10";
-    
-    $upcomingEvents = $db->select($sql);
 
-    // 📜 % de asistencia
-    $attendanceStats = $this->getAttendanceStats($studentId);
-    
-    echo json_encode([
-        'success' => true,
-        'data' => [
-            'student_id' => $studentId,
-            'today' => $today,
-            'day_of_week' => $dayOfWeek,
-            'today_schedule' => $todaySchedule,
-            'today_attendance' => $todayAttendance,
-            'upcoming_events' => $upcomingEvents,
-            'attendance_stats' => $attendanceStats
-        ]
-    ]);
+        $upcomingEvents = $db->select($sql);
 
-    exit;
+        // porcentaje de asistencia
+        $attendanceStats = $this->getAttendanceStats($studentId);
 
-}
-    
-    private function getCourses($studentId)
-    {
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'student_id' => $studentId,
+                'today' => $today,
+                'day_of_week' => $dayOfWeek,
+                'today_schedule' => $todaySchedule,
+                'today_attendance' => $todayAttendance,
+                'upcoming_events' => $upcomingEvents,
+                'attendance_stats' => $attendanceStats
+            ]
+        ]);
+
+        exit;
+    }
+
+    private function getCourses($studentId) {
         $db = new DataBase();
 
-        // SQL Injection 방지
+        // prevenir sql injection
         $studentId = intval($studentId);
 
-        // Get courses with schedule and attendance stats
+        // cursos con horario y estadísticas
         $sql = "SELECT
                     c.id,
                     c.nombre,
@@ -152,11 +148,11 @@ class ApiStudent extends ApiController
 
         $courses = $db->select($sql);
 
-        // Add attendance stats for each course
+        // añadir estadísticas por curso
         foreach ($courses as &$course) {
             $courseId = $course['id'];
 
-            // Get attendance stats for this course
+            // estadísticas de asistencia del curso
             $statsSql = "SELECT
                             a.estado,
                             COUNT(*) as count
@@ -193,18 +189,15 @@ class ApiStudent extends ApiController
 
         exit;
     }
-    
-    private function getDayOfWeekLetter($dayNumber)
-    {
+
+    private function getDayOfWeekLetter($dayNumber) {
         $days = ['L', 'M', 'X', 'J', 'V'];
         return $days[$dayNumber - 1] ?? 'L';
     }
 
-    private function getAttendanceStats($studentId)
-    {
+    private function getAttendanceStats($studentId) {
         $db = new DataBase();
 
-        // SQL Injection 방지를 위해 intval() 사용
         $studentId = intval($studentId);
 
         $sql = "SELECT estado, COUNT(*) as count
@@ -238,7 +231,8 @@ class ApiStudent extends ApiController
             }
         }
 
-        // percentage 계산
+        // calcular porcentaje
+        // numero de presentado / clases total
         $stats['percentage'] = $stats['total'] > 0
             ? round(($stats['presente'] / $stats['total']) * 100)
             : 0;
@@ -246,14 +240,12 @@ class ApiStudent extends ApiController
         return $stats;
     }
 
-    private function getCalendar($studentId)
-    {
+    private function getCalendar($studentId) {
         $db = new DataBase();
 
-        // SQL Injection 방지
         $studentId = intval($studentId);
 
-        // Get all events for courses the student is enrolled in
+        // eventos de cursos matriculados
         $sql = "SELECT
                     e.id,
                     e.curso_id,

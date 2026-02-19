@@ -9,7 +9,7 @@ class Init extends InitClass
 {
     public function init(): void
     {
-        // Registra la nueva ruta en la API y vincúlala al controlador personalizado
+        // registrar rutas de la api
         Kernel::addRoute('/api/3/cl-auth', 'ApiAuth', -1);
         ApiRoot::addCustomResource('cl-auth');
 
@@ -20,12 +20,12 @@ class Init extends InitClass
 
     public function uninstall(): void
     {
-        // Limpieza de datos o configuraciones al desinstalar el plugin
+        // limpiar datos al desinstalar
     }
 
     public function update(): void
     {
-        // Ajustes al instalar o actualizar el plugin
+        // ajustes al actualizar
     }
 
 }

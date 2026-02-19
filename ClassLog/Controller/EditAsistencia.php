@@ -35,13 +35,13 @@ class EditAsistencia extends Controller
 
     private function marcarAsistenciaAction(): void
     {
-        // 디버깅 로그
+        // log de depuración
         Tools::log()->notice('=== marcarAsistenciaAction START ===');
-        
-        // POST 데이터 받기
+
+        // recibir datos post
         $horarioId = $this->request->request->get('horario_id');
-        
-        // estudiantes 배열 - $_POST 직접 사용
+
+        // array de estudiantes desde $_post
         $estudiantesPresentes = $_POST['estudiantes'] ?? [];
         
         $fecha = date('Y-m-d');
@@ -56,7 +56,7 @@ class EditAsistencia extends Controller
             $estudiantesPresentes = [];
         }
 
-        // horarioId를 파라미터로 전달
+        // obtener lista de estudiantes
         $todosEstudiantes = $this->getEstudiantesList($horarioId);
         
         Tools::log()->notice('Total estudiantes: ' . count($todosEstudiantes));
@@ -80,7 +80,7 @@ class EditAsistencia extends Controller
             Tools::log()->notice("Usuario {$usuarioId}: estado = {$nuevoEstado}, in_array = " . (in_array($usuarioId, $estudiantesPresentes) ? 'true' : 'false'));
 
             if (!empty($existing)) {
-                // 업데이트
+                // actualizar
                 $asistencia = $existing[0];
                 
                 if ($asistencia->estado !== $nuevoEstado) {
@@ -93,7 +93,7 @@ class EditAsistencia extends Controller
                     }
                 }
             } else {
-                // presente만 새로 저장
+                // solo guardar si presente
                 if ($nuevoEstado === 'presente') {
                     $asistencia->usuario_id = $usuarioId;
                     $asistencia->horario_id = $horarioId;
@@ -115,7 +115,7 @@ class EditAsistencia extends Controller
 
     public function getEstudiantesList($horarioId = null): array
     {
-        // POST 요청일 때는 파라미터로 받기
+        // recibir horario_id por parámetro
         if ($horarioId === null) {
             $horarioId = filter_input(INPUT_GET, 'code');
         }

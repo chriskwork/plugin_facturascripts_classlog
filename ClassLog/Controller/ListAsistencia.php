@@ -22,13 +22,11 @@ class ListAsistencia extends Controller
     {
         parent::privateCore($response, $user, $permissions);
         
-        // 커스텀 템플릿 사용
+        // usar plantilla personalizada
         $this->setTemplate('ListAsistencia');
     }
 
-    /**
-     * 오늘 날짜의 수업 목록을 가져옵니다
-     */
+    // horarios de hoy
     public function getHorariosHoy(): array
     {
         $todayNumber = date('N');
@@ -47,7 +45,7 @@ class ListAsistencia extends Controller
         $horarioModel = new Horario();
         $where = [new DataBaseWhere('dia_semana', $todayLetter)];
 
-        // 교수인 경우 자기 수업만 보기
+        // si es profesor, solo sus clases
         if (!$this->user->admin) {
             $profesorModel = new Profesor();
             $whereProf = [new DataBaseWhere('usuario_id', $this->user->nick)];
@@ -66,9 +64,7 @@ class ListAsistencia extends Controller
         return $horarioModel->all($where, ['hora_inicio' => 'ASC'], 0, 0);
     }
 
-    /**
-     * 과목 이름 가져오기
-     */
+    // nombre del curso
     public function getCursoNombre($cursoId): string
     {
         $cursoModel = new Curso();

@@ -1,37 +1,31 @@
 <?php
+
 namespace FacturaScripts\Plugins\ClassLog\Controller;
 
 use FacturaScripts\Core\Template\ApiController;
 use FacturaScripts\Core\Base\DataBase;
 
-class ApiAuth extends ApiController
-{
-    /**
-     * Override run() to allow public access to auth endpoints (login, register)
-     * without requiring API token validation
-     */
-    public function run(): void
-    {
-        // Set CORS headers for all requests
+class ApiAuth extends ApiController {
+
+    public function run(): void {
+        // cors para versión web
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Token, Authorization');
         header('Access-Control-Max-Age: 86400');
         header('Content-Type: application/json');
 
-        // Handle preflight OPTIONS request
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             http_response_code(200);
             exit;
         }
 
-        // Directly run the resource without token validation
+        // sin validación de token
         $this->runResource();
     }
 
-    protected function runResource(): void
-    {
-        // Get request body
+    protected function runResource(): void {
+        // leer cuerpo de la petición
         $rawInput = file_get_contents('php://input');
         $jsonData = json_decode($rawInput, true);
 
@@ -40,14 +34,14 @@ class ApiAuth extends ApiController
         error_log("API Request - REQUEST_URI: " . $_SERVER['REQUEST_URI']);
         error_log("API Request - REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
 
-        // Try to get action from JSON body first, then URL query params, then POST params
+        // acción: json > url > post
         $action = isset($jsonData['action'])
             ? $jsonData['action']
             : ($this->request->query->get('action', '') ?: $this->request->request->get('action', ''));
 
         error_log("API Request - Action: " . $action);
 
-        switch($action) {
+        switch ($action) {
             case 'login':
                 $this->login();
                 break;
@@ -75,12 +69,11 @@ class ApiAuth extends ApiController
         }
     }
 
-    private function login()
-    {
+    private function login() {
         $db = new DataBase();
         $db->connect();
 
-        // Get request body
+        // leer cuerpo de la petición
         $rawInput = file_get_contents('php://input');
         $jsonData = json_decode($rawInput, true);
 
@@ -88,7 +81,7 @@ class ApiAuth extends ApiController
         error_log("Login attempt - JSON data: " . print_r($jsonData, true));
         error_log("Login attempt - Request method: " . $_SERVER['REQUEST_METHOD']);
 
-        // Try to get data from JSON body first, then fall back to request params
+        // datos: json body o post params
         $email = isset($jsonData['email']) ? $jsonData['email'] : $this->request->request->get('email', '');
         $password = isset($jsonData['password']) ? $jsonData['password'] : $this->request->request->get('password', '');
 
@@ -104,7 +97,7 @@ class ApiAuth extends ApiController
             exit;
         }
 
-        // Get user by email
+        // buscar usuario por email
         $sql = "SELECT * FROM cl_usuarios WHERE email = " . $db->var2str($email);
         error_log("Login SQL query: " . $sql);
         $users = $db->select($sql);
@@ -120,7 +113,7 @@ class ApiAuth extends ApiController
 
         $user = $users[0];
 
-        // Verify password
+        // verificar contraseña
         if (!password_verify($password, $user['password_hash'])) {
             echo json_encode([
                 'success' => false,
@@ -129,14 +122,14 @@ class ApiAuth extends ApiController
             exit;
         }
 
-        // Start session and store user info
+        // iniciar sesión
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_email'] = $user['email'];
 
-        // Remove password from response
+        // eliminar contraseña de la respuesta
         unset($user['password_hash']);
 
         echo json_encode([
@@ -151,25 +144,24 @@ class ApiAuth extends ApiController
         exit;
     }
 
-    private function register()
-    {
+    private function register() {
         $db = new DataBase();
         $db->connect();
 
-        // Get request body
+        // leer cuerpo de la petición
         $rawInput = file_get_contents('php://input');
         $jsonData = json_decode($rawInput, true);
 
         error_log("Register attempt - Raw input: " . $rawInput);
         error_log("Register attempt - JSON data: " . print_r($jsonData, true));
 
-        // Try to get data from JSON body first, then fall back to request params
+        // datos: json body o post params
         $email = isset($jsonData['email']) ? $jsonData['email'] : $this->request->request->get('email', '');
         $password = isset($jsonData['password']) ? $jsonData['password'] : $this->request->request->get('password', '');
         $nombre = isset($jsonData['nombre']) ? $jsonData['nombre'] : $this->request->request->get('nombre', '');
         $apellidos = isset($jsonData['apellidos']) ? $jsonData['apellidos'] : $this->request->request->get('apellidos', '');
 
-        // Validate required fields
+        // validar campos requeridos
         if (empty($email) || empty($password) || empty($nombre) || empty($apellidos)) {
             error_log("Register failed - Missing required fields");
             echo json_encode([
@@ -179,7 +171,7 @@ class ApiAuth extends ApiController
             exit;
         }
 
-        // Validate email format
+        // validar formato de email
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode([
                 'success' => false,
@@ -188,7 +180,7 @@ class ApiAuth extends ApiController
             exit;
         }
 
-        // Check if email already exists
+        // verificar si email ya existe
         $sql = "SELECT id FROM cl_usuarios WHERE email = " . $db->var2str($email);
         $existing = $db->select($sql);
 
@@ -201,18 +193,15 @@ class ApiAuth extends ApiController
             exit;
         }
 
-        // Hash password
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-        // Use direct mysqli connection to bypass FacturaScripts transaction issues
-        // Get config values
+        // conexión directa mysqli (evita problemas con transacciones)
         $dbHost = defined('FS_DB_HOST') ? FS_DB_HOST : 'localhost';
         $dbUser = defined('FS_DB_USER') ? FS_DB_USER : 'root';
         $dbPass = defined('FS_DB_PASS') ? FS_DB_PASS : 'root';
         $dbName = defined('FS_DB_NAME') ? FS_DB_NAME : 'facturascripts';
         $dbPort = defined('FS_DB_PORT') ? FS_DB_PORT : 3306;
 
-        error_log("DB Connection params - Host: $dbHost, User: $dbUser, DB: $dbName, Port: $dbPort");
 
         $mysqli = new \mysqli($dbHost, $dbUser, $dbPass, $dbName, $dbPort);
 
@@ -227,8 +216,7 @@ class ApiAuth extends ApiController
 
         $mysqli->set_charset('utf8mb4');
 
-        // Prepare statement - include all required fields
-        // Note: 'asignatura' field exists in the table but not in the XML schema
+        // preparar consulta (asignatura existe en la tabla pero no en el esquema xml)
         $stmt = $mysqli->prepare("INSERT INTO cl_usuarios (email, password_hash, nombre, apellidos, asignatura, created_at, updated_at) VALUES (?, ?, ?, ?, '', NOW(), NOW())");
 
         if (!$stmt) {
@@ -248,7 +236,7 @@ class ApiAuth extends ApiController
             $userId = $mysqli->insert_id;
             error_log("Register - New user ID: " . $userId);
 
-            // Get the newly created user
+            // obtener usuario recién creado
             $getUserStmt = $mysqli->prepare("SELECT id, email, nombre, apellidos, telefono, avatar_url, created_at, updated_at FROM cl_usuarios WHERE id = ?");
             $getUserStmt->bind_param("i", $userId);
             $getUserStmt->execute();
@@ -256,7 +244,7 @@ class ApiAuth extends ApiController
             $user = $userResult->fetch_assoc();
             $getUserStmt->close();
 
-            // Start session
+            // iniciar sesión
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
@@ -289,8 +277,7 @@ class ApiAuth extends ApiController
         exit;
     }
 
-    private function logout()
-    {
+    private function logout() {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -305,8 +292,7 @@ class ApiAuth extends ApiController
         exit;
     }
 
-    private function getProfile()
-    {
+    private function getProfile() {
         $db = new DataBase();
         $db->connect();
         $userId = $this->request->query->get('id', '');
@@ -343,8 +329,7 @@ class ApiAuth extends ApiController
         exit;
     }
 
-    private function updateProfile()
-    {
+    private function updateProfile() {
         $db = new DataBase();
         $db->connect();
 
@@ -371,7 +356,6 @@ class ApiAuth extends ApiController
                 WHERE id = {$userId}";
 
         if ($db->exec($sql)) {
-            // Get updated user
             $sql = "SELECT * FROM cl_usuarios WHERE id = {$userId}";
             $users = $db->select($sql);
             $user = $users[0];
@@ -392,8 +376,7 @@ class ApiAuth extends ApiController
         exit;
     }
 
-    private function updateSecurity()
-    {
+    private function updateSecurity() {
         $db = new DataBase();
         $db->connect();
 
@@ -411,9 +394,9 @@ class ApiAuth extends ApiController
 
         $userId = intval($userId);
 
-        // Check if email is being changed
+        // verificar si cambia el email
         if (!empty($email)) {
-            // Validate email
+            // validar email
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 echo json_encode([
                     'success' => false,
@@ -422,7 +405,7 @@ class ApiAuth extends ApiController
                 exit;
             }
 
-            // Check if email exists for another user
+            // comprobar si email ya está en uso
             $sql = "SELECT id FROM cl_usuarios WHERE email = " . $db->var2str($email) . " AND id != {$userId}";
             $existing = $db->select($sql);
 
@@ -435,7 +418,7 @@ class ApiAuth extends ApiController
             }
         }
 
-        // Build update query
+        // construir consulta de actualización
         $updates = [];
 
         if (!empty($email)) {
@@ -474,8 +457,7 @@ class ApiAuth extends ApiController
         exit;
     }
 
-    private function deleteAccount()
-    {
+    private function deleteAccount() {
         $db = new DataBase();
         $db->connect();
 
@@ -491,11 +473,11 @@ class ApiAuth extends ApiController
 
         $userId = intval($userId);
 
-        // Delete user
+        // eliminar usuario
         $sql = "DELETE FROM cl_usuarios WHERE id = {$userId}";
 
         if ($db->exec($sql)) {
-            // Destroy session
+            // destruir sesión
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
